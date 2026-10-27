@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Sound Mini S3 in 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: eine Werkbank-Bühne mit dem Modell, darunter Steuerung und Lötliste. */
+:root {
+  --bg: #eef2f6;
+  --stage: #dfe6ee;
+  --panel: #ffffff;
+  --fg: #16202b;
+  --muted: #5a6878;
+  --line: #c9d3de;
+  --accent: #d9590f;
+  --accent-ink: #ffffff;
+  --label-bg: rgba(255,255,255,.92);
+  --leader: #2c3a48;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --stage: #18212b; --panel: #1b242e; --fg: #e5ebf1; --muted: #93a2b2;
+    --line: #2d3a48; --accent: #f07a32; --accent-ink: #13181e; --label-bg: rgba(24,33,43,.92);
+    --leader: #c3cfdb; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --stage: #18212b; --panel: #1b242e; --fg: #e5ebf1; --muted: #93a2b2;
+  --line: #2d3a48; --accent: #f07a32; --accent-ink: #13181e; --label-bg: rgba(24,33,43,.92);
+  --leader: #c3cfdb; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); font-weight: 600; text-wrap: balance; letter-spacing: -.01em; }
+.lead { margin: 0; color: var(--muted); max-width: 68ch; }
+.stage { position: relative; background: var(--stage); border-radius: 10px; overflow: hidden; aspect-ratio: 16 / 10; max-width: 100%; touch-action: none; cursor: grab; }
+.stage:active { cursor: grabbing; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+#overlay { position: absolute; inset: 0; pointer-events: none; }
+#overlay svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lbl { position: absolute; background: var(--label-bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px 4px; font-size: 13px; line-height: 1.3; white-space: nowrap; transform: translateY(-50%); }
+.lbl.left { transform: translate(-100%, -50%); }
+.lbl b { font-weight: 600; display: block; }
+.lbl span { color: var(--muted); font-size: 12px; }
+.hint { position: absolute; right: 10px; bottom: 8px; font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button, .toggle {
+  font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  padding: 6px 12px; border-radius: 6px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.seg button:focus-visible, .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ctl-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .stage { aspect-ratio: 4 / 5; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h2 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+td.pin { font-family: var(--font-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); }
+ul.facts { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Soundmodul Mini S3 · Aufbau</div>
+    <h1>ESP32-S3-Zero und MAX98357A als Sandwich</h1>
+    <p class="lead">Der Verstärker sitzt Rücken an Rücken auf dem ESP. Seine 7-polige Stiftleiste geht durch beide Platinen und trifft 5V, GND, 3V3, IO1 bis IO4. Port A kommt als 4-adriges Kabel mit JST-Stecker, Port B als zwei Stifte.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D-Modell des Aufbaus, mit der Maus drehbar"></canvas>
+    <div id="overlay"><svg id="leaders"></svg></div>
+    <div class="hint" id="hint">ziehen = drehen · Rad = zoomen</div>
+  </div>
+
+  <div class="controls">
+    <span class="ctl-label">Ansicht</span>
+    <div class="seg" role="group" aria-label="Ansicht">
+      <button type="button" id="v-max" data-view="max" aria-pressed="true">MAX-Seite</button>
+      <button type="button" id="v-esp" data-view="esp" aria-pressed="false">ESP-Seite</button>
+      <button type="button" id="v-top" data-view="top" aria-pressed="false">Draufsicht</button>
+      <button type="button" id="v-side" data-view="side" aria-pressed="false">Seitenansicht</button>
+    </div>
+    <button type="button" class="toggle" id="t-labels" aria-pressed="true">Beschriftung aus</button>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Was wo angelötet ist</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>ESP-Pin</th><th>Anschluss</th><th>Hinweis</th></tr></thead>
+          <tbody>
+            <tr><td class="pin">5V</td><td>MAX VIN · Kabel rot</td><td>+5 V vom Empfänger</td></tr>
+            <tr><td class="pin">GND</td><td>MAX GND · Kabel schwarz</td><td></td></tr>
+            <tr><td class="pin">3V3</td><td>frei</td><td>SD-Stift des MAX weggelassen</td></tr>
+            <tr><td class="pin">IO1</td><td>MAX GAIN</td><td>offen = 9 dB</td></tr>
+            <tr><td class="pin">IO2</td><td>MAX DIN</td><td>I2S Daten</td></tr>
+            <tr><td class="pin">IO3</td><td>MAX BCLK</td><td>I2S Takt</td></tr>
+            <tr><td class="pin">IO4</td><td>MAX LRC</td><td>I2S Wortauswahl</td></tr>
+            <tr><td class="pin">IO5</td><td>Port A · Kabel gelb</td><td>CRSF RX ← Empfänger-TX</td></tr>
+            <tr><td class="pin">IO6</td><td>Port A · Kabel weiß</td><td>CRSF TX → Empfänger-RX</td></tr>
+            <tr><td class="pin">IO7 / IO8</td><td>Port B · 2 Stifte</td><td>RX / TX</td></tr>
+            <tr><td class="pin">IO43 / IO44</td><td>Port C · Kabel grün / blau</td><td>optional, im Modell halb durchsichtig: direkt an die Pins löten</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Eckdaten</h2>
+      <ul class="facts">
+        <li>Größe ca. 23,5 × 19,5 × 9 mm ohne Kabel</li>
+        <li>BOOT-Taste liegt frei auf der ESP-Seite und dient als WLAN-Taste</li>
+        <li>USB-C bleibt zugänglich, steht unter dem MAX hervor</li>
+        <li>Lautsprecher am JST-PH-Stecker des MAX, nie an GND</li>
+        <li>Keine Lochrasterplatine, kein Elko, keine SD-Karte</li>
+      </ul>
+      <p class="note" style="margin-top:10px">Modell nach Martins Fotos vom 27.10.2026 (Kabelfarben nach Standard). Kleine Bauteile sind vereinfacht, die Maße der Platinen und das Pinraster (2,54 mm) stimmen.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('c');
+  const svg = document.getElementById('leaders');
+  const overlay = document.getElementById('overlay');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1.6, 1, 2000);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x50606e, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(40, 90, 55);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 10, far: 300 });
+  sun.shadow.radius = 4;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+  fill.position.set(-60, -20, 40);
+  scene.add(fill);
+
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // ---------- Hilfen ----------
+  const P = 2.54;
+  const px = k => -10.16 + P * k;           // Pinraster des S3-Zero, k = 0 am USB-Ende
+  const ROW_A = -7.62, ROW_B = 7.62;          // A: 5V GND 3V3 IO1..IO6, B: TX RX 13..7
+  const asm = new THREE.Group();               // ganze Baugruppe, wird zum Umdrehen gedreht
+  scene.add(asm);
+
+  function mat(color, o) { return new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0.0 }, o || {})); }
+  const M = {
+    gold: mat(0xd6aa45, { metalness: 0.85, roughness: 0.3 }),
+    solder: mat(0xc9cdd2, { metalness: 0.9, roughness: 0.25 }),
+    yellow: mat(0xf0d22a, { roughness: 0.55 }),
+    black: mat(0x1d1f22, { roughness: 0.5 }),
+    chip: mat(0x1c1e21, { roughness: 0.45 }),
+    steel: mat(0xb9bec4, { metalness: 0.85, roughness: 0.3 }),
+    white: mat(0xf2efe6, { roughness: 0.7 }),
+    tan: mat(0xb8875a, { roughness: 0.6 }),
+    espEdge: mat(0x1c4d9b),
+    maxEdge: mat(0x4a1f78),
+  };
+  function box(w, h, d, m, x, y, z, parent) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true;
+    (parent || asm).add(b); return b;
+  }
+
+  // Platinen-Textur. side 'top' = +Y (Bild oben = -Z), 'bottom' = -Y (Bild oben = +Z, lesbar nach dem Umdrehen)
+  function boardTexture(w, d, cx, cz, side, bg, draw) {
+    const ppm = 28;
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(w * ppm); cv.height = Math.round(d * ppm);
+    const g = cv.getContext('2d');
+    g.fillStyle = bg; g.fillRect(0, 0, cv.width, cv.height);
+    const map = (x, z) => [(x - cx + w / 2) * ppm, side === 'top' ? (z - cz + d / 2) * ppm : (d / 2 - (z - cz)) * ppm];
+    draw(g, map, ppm);
+    const t = new THREE.CanvasTexture(cv);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+    return t;
+  }
+  function pad(g, map, ppm, x, z, rOut, rIn, ring, hole) {
+    const [u, v] = map(x, z);
+    g.fillStyle = ring; g.beginPath(); g.arc(u, v, rOut * ppm, 0, Math.PI * 2); g.fill();
+    if (rIn) { g.fillStyle = hole; g.beginPath(); g.arc(u, v, rIn * ppm, 0, Math.PI * 2); g.fill(); }
+  }
+  function text(g, map, ppm, s, x, z, size, color, rot, align) {
+    const [u, v] = map(x, z);
+    g.save(); g.translate(u, v); if (rot) g.rotate(rot);
+    g.fillStyle = color; g.font = `600 ${size * ppm}px "IBM Plex Mono", monospace`;
+    g.textAlign = align || 'center'; g.textBaseline = 'middle'; g.fillText(s, 0, 0); g.restore();
+  }
+
+  // ---------- ESP32-S3-Zero: Platine y 0..1, Bauteilseite unten (-Y) ----------
+  const ESP = { w: 23.5, d: 18, cx: 0, cz: 0 };
+  const rowA = ['5V', 'GND', '3V3', '1', '2', '3', '4', '5', '6'];
+  const rowB = ['TX', 'RX', '13', '12', '11', '10', '9', '8', '7'];
+  const espTop = boardTexture(ESP.w, ESP.d, 0, 0, 'top', '#1f55a6', (g, map, ppm) => {
+    g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 2;
+    for (let i = 0; i < 9; i++) { pad(g, map, ppm, px(i), ROW_A, 0.85, 0.45, '#d9b25a', '#11161c'); pad(g, map, ppm, px(i), ROW_B, 0.85, 0.45, '#d9b25a', '#11161c'); }
+    text(g, map, ppm, 'ESP32-S3-Zero', 9.6, 0.4, 1.35, '#e8eef6', -Math.PI / 2);
+  });
+  const espBot = boardTexture(ESP.w, ESP.d, 0, 0, 'bottom', '#1f55a6', (g, map, ppm) => {
+    for (let i = 0; i < 9; i++) {
+      pad(g, map, ppm, px(i), ROW_A, 0.85, 0.45, '#d9b25a', '#11161c');
+      pad(g, map, ppm, px(i), ROW_B, 0.85, 0.45, '#d9b25a', '#11161c');
+      text(g, map, ppm, rowA[i], px(i), ROW_A + 1.9, 0.85, '#dfe8f3');
+      text(g, map, ppm, rowB[i], px(i), ROW_B - 1.9, 0.85, '#dfe8f3');
+    }
+    [[7.5, 4.1, '14'], [5.0, 4.1, '15'], [2.5, 4.1, '16']].forEach(([x, z]) => pad(g, map, ppm, x, z, 0.6, 0, '#d9b25a'));
+    text(g, map, ppm, 'B', -5.4, -5.2, 0.9, '#dfe8f3');
+    text(g, map, ppm, 'R', -5.4, 5.2, 0.9, '#dfe8f3');
+  });
+  const espBoard = new THREE.Mesh(new THREE.BoxGeometry(ESP.w, 1.0, ESP.d), [
+    M.espEdge, M.espEdge, mat(0xffffff, { map: espTop }), mat(0xffffff, { map: espBot }), M.espEdge, M.espEdge,
+  ]);
+  espBoard.position.set(0, 0.5, 0); espBoard.castShadow = true; espBoard.receiveShadow = true; asm.add(espBoard);
+
+  // Bauteile auf der ESP-Unterseite (y < 0)
+  const usb = box(7.4, 3.2, 9.0, M.steel, -8.6, -1.6, 0);
+  box(0.2, 1.4, 6.6, M.black, -12.25, -1.6, 0);                         // Öffnung der Buchse
+  const chip = box(7, 0.9, 7, M.chip, 3.4, -0.45, 0.6); chip.rotation.y = Math.PI / 4;
+  const ant = box(2.2, 1.0, 5.2, M.white, 10.4, -0.5, -1.2);
+  box(2.25, 1.02, 2.6, mat(0xd2352b), 10.4, -0.5, -1.2);
+  box(2.8, 1.5, 3.6, M.steel, -3.2, -0.75, -5.0);                       // BOOT
+  box(1.6, 0.55, 1.6, M.chip, -3.2, -1.75, -5.0);
+  box(2.8, 1.5, 3.6, M.steel, -3.2, -0.75, 5.0);                        // RESET
+  box(1.6, 0.55, 1.6, M.chip, -3.2, -1.75, 5.0);
+  box(1.6, 0.6, 1.6, mat(0xffffff, { emissive: 0x334455 }), -3.2, -0.3, 0); // RGB-LED
+  box(1.6, 1.0, 2.9, M.black, 0.4, -0.5, 5.6);                          // Spannungsregler
+  [[6.8, -5.4], [7.8, -4.0], [8.4, 4.4], [0.6, -4.2], [-0.6, -3.0], [6.0, 5.6]].forEach(([x, z]) => box(1.0, 0.5, 0.5, M.tan, x, -0.25, z));
+
+  // ---------- 7-polige Stiftleiste MAX <-> ESP, SD-Stift fehlt ----------
+  const yHdr0 = 1.0, yHdr1 = 3.5, yMax0 = 3.5, yMax1 = 5.1;
+  box(7 * P, yHdr1 - yHdr0, 2.5, M.yellow, px(3), (yHdr0 + yHdr1) / 2, ROW_A);
+  function pin(x, z, y0, y1) {
+    box(0.64, y1 - y0, 0.64, M.gold, x, (y0 + y1) / 2, z);
+  }
+  function blob(x, y, z, up) {
+    const s = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.9, 16), M.solder);
+    s.position.set(x, y, z); if (!up) s.rotation.x = Math.PI; s.castShadow = true; asm.add(s);
+  }
+  for (let k = 0; k < 7; k++) {
+    if (k === 2) continue;                    // SD -> 3V3 nicht verbunden
+    pin(px(k), ROW_A, -1.0, yMax1 + 0.9);
+    blob(px(k), yMax1 + 0.35, ROW_A, true);
+    blob(px(k), -0.35, ROW_A, false);
+  }
+  // 2-polige Stifte: IO5/IO6 (Reihe A) und IO8/IO7 (Reihe B, Port B), Kunststoff auf der Rückseite
+  [[ROW_A], [ROW_B]].forEach(([z]) => {
+    box(2 * P, yHdr1 - yHdr0, 2.5, M.yellow, (px(7) + px(8)) / 2, (yHdr0 + yHdr1) / 2, z);
+    [px(7), px(8)].forEach(x => { pin(x, z, -0.9, 9.5); blob(x, -0.35, z, false); });
+  });
+
+  // ---------- MAX98357A: Platine y 3.5..5.1, Bauteile oben ----------
+  const MAX = { w: 18.0, d: 19.4, cx: -2.6, cz: 0.7 };
+  const maxTop = boardTexture(MAX.w, MAX.d, MAX.cx, MAX.cz, 'top', '#55248a', (g, map, ppm) => {
+    const names = ['Vin', 'GND', 'SD', 'GAIN', 'DIN', 'BCLK', 'LRC'];
+    for (let k = 0; k < 7; k++) {
+      pad(g, map, ppm, px(k), ROW_A, 0.95, 0.45, k === 2 ? '#d9b25a' : '#c7ccd2', '#16101f');
+      text(g, map, ppm, names[k], px(k), ROW_A + 1.75, 0.78, '#f3eefa');
+    }
+    text(g, map, ppm, 'MAX', 3.0, -2.4, 1.15, '#f3eefa');
+    text(g, map, ppm, '98357A', 3.0, -0.9, 1.15, '#f3eefa');
+    text(g, map, ppm, 'I2S Amp', 3.0, 0.6, 1.0, '#f3eefa');
+    [[-8.6, 7.9, '+'], [3.4, 7.9, '−']].forEach(([x, z, s]) => {
+      pad(g, map, ppm, x, z, 1.75, 1.1, '#d9b25a', '#3a2a00');
+      const [u, v] = map(x, z - 3.0);
+      g.strokeStyle = '#f3eefa'; g.lineWidth = 0.14 * ppm; g.beginPath(); g.arc(u, v, 0.95 * ppm, 0, Math.PI * 2); g.stroke();
+      text(g, map, ppm, s, x, z - 3.0, 1.3, '#f3eefa');
+    });
+    g.strokeStyle = '#f3eefa'; g.lineWidth = 0.12 * ppm;
+    const [a, b] = map(-5.6, 3.6), [c, d] = map(0.4, 11);
+    g.strokeRect(a, b, c - a, d - b);
+  });
+  const maxBoard = new THREE.Mesh(new THREE.BoxGeometry(MAX.w, yMax1 - yMax0, MAX.d), [
+    M.maxEdge, M.maxEdge, mat(0xffffff, { map: maxTop }), M.maxEdge, M.maxEdge, M.maxEdge,
+  ]);
+  maxBoard.position.set(MAX.cx, (yMax0 + yMax1) / 2, MAX.cz); maxBoard.castShadow = true; maxBoard.receiveShadow = true;
+  asm.add(maxBoard);
+  box(3, 0.8, 3, M.chip, -1.2, yMax1 + 0.4, -2.4);                       // Verstärker-IC
+  [[-9.4, -4.0, 2.4, 1.3, M.black], [-9.6, -1.4, 1.4, 2.4, M.tan], [-7.4, -1.4, 1.4, 2.4, M.tan],
+   [-9.0, 1.6, 2.4, 1.3, M.tan], [-5.4, 1.4, 2.4, 1.3, M.black], [0.6, 0.8, 2.4, 1.3, M.black]]
+    .forEach(([x, z, w, d, m]) => box(w, 0.8, d, m, x, yMax1 + 0.4, z));
+  // JST-PH 2-polig liegend, Öffnung nach vorne
+  const jst2 = new THREE.Group(); asm.add(jst2); jst2.position.set(-2.6, yMax1, 9.4);
+  box(6.0, 4.0, 6.2, M.white, 0, 2.0, 1.4, jst2);
+  box(1.4, 2.6, 0.2, M.chip, -1.0, 2.0, 4.52, jst2);
+  box(1.4, 2.6, 0.2, M.chip, 1.0, 2.0, 4.52, jst2);
+
+  // ---------- Port A: 4 Adern von der ESP-Unterseite zum JST-Stecker ----------
+  const plug = new THREE.Group(); asm.add(plug);
+  plug.position.set(32, -1.0, -26); plug.rotation.y = -0.55;
+  box(5.0, 4.6, 10.0, M.white, 0, 0, 0, plug);
+  box(1.2, 3.4, 9.0, M.white, 2.9, 0.3, 0, plug);
+  const wires = [
+    { k: 1, color: 0x1b1b1b, off: -3.0 },  // GND schwarz
+    { k: 0, color: 0xc8261e, off: -1.0 },  // 5V rot
+    { k: 7, color: 0xf2c418, off: 1.0 },   // IO5 gelb
+    { k: 8, color: 0xf4f4f0, off: 3.0 },   // IO6 weiß
+  ];
+  plug.updateMatrix();
+  wires.forEach((w, i) => {
+    const x0 = px(w.k);
+    const end = new THREE.Vector3(-2.6, 0, w.off * 0.75).applyMatrix4(plug.matrix);
+    const pts = [
+      new THREE.Vector3(x0, -0.6, ROW_A),
+      new THREE.Vector3(x0 + 0.4, -1.6, ROW_A - 1.7),
+      new THREE.Vector3(w.k < 2 ? x0 + 3 : x0 + 1.5, -2.0, -10.6 - i * 0.5),
+      new THREE.Vector3(14 + i * 0.6, -1.8, -13.5 - i * 0.7),
+      new THREE.Vector3(26 + i * 0.4, -1.2, -21 - i * 0.7),
+      end,
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.45, 10, false), mat(w.color, { roughness: 0.45 }));
+    tube.castShadow = true; asm.add(tube);
+    const s = new THREE.Mesh(new THREE.SphereGeometry(0.75, 14, 10), M.solder);
+    s.position.set(x0, -0.45, ROW_A); s.scale.y = 0.6; asm.add(s);
+  });
+
+  // ---------- Port C (optional): 2 Adern an IO43/IO44, halb durchsichtig ----------
+  const plugC = new THREE.Group(); asm.add(plugC);
+  plugC.position.set(30, -1.0, 24); plugC.rotation.y = 0.55;
+  const ghost = c => mat(c, { transparent: true, opacity: 0.5, depthWrite: false, roughness: 0.45 });
+  const plugCm = new THREE.Mesh(new THREE.BoxGeometry(5.0, 4.6, 6.0), ghost(0xf2efe6));
+  plugCm.position.set(0, 0, 0); plugC.add(plugCm);
+  plugC.updateMatrix();
+  [{ k: 0, color: 0x1f9a5a, off: 1.0 }, { k: 1, color: 0x2f6fd6, off: -1.0 }].forEach((w, i) => {
+    const x0 = px(w.k);
+    const end = new THREE.Vector3(-2.6, 0, w.off).applyMatrix4(plugC.matrix);
+    const pts = [
+      new THREE.Vector3(x0, -0.6, ROW_B),
+      new THREE.Vector3(x0 + 0.4, -1.6, ROW_B + 1.7),
+      new THREE.Vector3(x0 + 3, -2.0, 10.8 + i * 0.5),
+      new THREE.Vector3(12 + i * 0.6, -1.8, 13.5 + i * 0.7),
+      new THREE.Vector3(22 + i * 0.4, -1.2, 19 + i * 0.7),
+      end,
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    asm.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.45, 10, false), ghost(w.color)));
+    const s = new THREE.Mesh(new THREE.SphereGeometry(0.75, 14, 10), ghost(0xc9cdd2));
+    s.position.set(x0, -0.45, ROW_B); s.scale.y = 0.6; asm.add(s);
+  });
+
+  // ---------- Beschriftung ----------
+  const N_UP = new THREE.Vector3(0, 1, 0), N_DN = new THREE.Vector3(0, -1, 0);
+  const labels = [
+    { t: 'MAX98357A', s: 'Rücken an Rücken auf dem ESP', a: [-8, 5.2, 3], n: N_UP, dx: -170, dy: 10 },
+    { t: 'SD-Stift weggelassen', s: '3V3 bleibt frei', a: [px(2), 5.2, ROW_A], n: N_UP, dx: -170, dy: -100 },
+    { t: 'Stiftleiste 7-polig', s: 'VIN 5V · GND · GAIN IO1 · DIN IO2 · BCLK IO3 · LRC IO4', a: [px(5), 6.0, ROW_A], n: N_UP, dx: -60, dy: -190 },
+    { t: 'Lautsprecher', s: 'JST-PH 2-polig, + und −', a: [-2.6, 9.0, 13.5], n: N_UP, dx: 60, dy: 110 },
+    { t: 'Port B', s: 'IO7 RX · IO8 TX', a: [px(7.5), 9.5, ROW_B], n: N_UP, dx: 130, dy: 90 },
+    { t: 'IO5 · IO6', s: 'Stifte von Port A', a: [px(7.5), 9.5, ROW_A], n: N_UP, dx: 150, dy: -30 },
+    { t: 'Port A zum Empfänger', s: 'GND schwarz · +5V rot · IO5 gelb · IO6 weiß', a: [32, 1.5, -26], n: null, dx: 40, dy: -80 },
+    { t: 'USB-C', s: 'Flashen und Konsole', a: [-12.3, -1.6, 0], n: new THREE.Vector3(-1, 0, 0), dx: -150, dy: 20 },
+    { t: 'ESP32-S3-Zero', s: 'Rückseite', a: [9.6, 1.05, 3], n: N_UP, dx: 140, dy: -10 },
+    { t: 'BOOT-Taste', s: 'nach dem Start = WLAN-Taste', a: [-3.2, -2.0, -5.0], n: N_DN, dx: -40, dy: 130 },
+    { t: 'RESET', s: '', a: [-3.2, -2.0, 5.0], n: N_DN, dx: -110, dy: -60 },
+    { t: 'ESP32-S3FH4R2', s: '4 MB Flash, 2 MB PSRAM', a: [3.4, -0.9, 0.6], n: N_DN, dx: 30, dy: -120 },
+    { t: 'Lötpunkte Port A', s: 'GND, +5V, IO5, IO6', a: [px(7.5), -0.6, ROW_A], n: N_DN, dx: 100, dy: 70 },
+    { t: 'Port C (optional)', s: 'IO43 TX grün · IO44 RX blau, direkt anlöten', a: [30, 1.5, 24], n: null, dx: 120, dy: 10 },
+    { t: 'Lötpunkte Port C', s: 'optional: IO43, IO44', a: [px(0.5), -0.6, ROW_B], n: N_DN, dx: 40, dy: -150 },
+  ];
+  labels.forEach(l => {
+    l.el = document.createElement('div');
+    l.el.className = 'lbl';
+    l.el.innerHTML = `<b>${l.t}</b>` + (l.s ? `<span>${l.s}</span>` : '');
+    overlay.appendChild(l.el);
+    l.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    l.dot.setAttribute('r', '3');
+    svg.appendChild(l.line); svg.appendChild(l.dot);
+    l.v = new THREE.Vector3();
+  });
+  let showLabels = true;
+
+  // ---------- Kamera und Ansichten ----------
+  const VIEWS = {
+    max:  { az: -28, el: 42, dist: 108, flip: 0, tx: 8, ty: 0, tz: -6 },
+    esp:  { az: -28, el: 42, dist: 108, flip: 1, tx: 8, ty: 0, tz: 6 },
+    top:  { az: 0,   el: 89, dist: 115, flip: 0, tx: 8, ty: 0, tz: -6 },
+    side: { az: 0,   el: 6,  dist: 80, flip: 0, tx: 2,  ty: 3, tz: 0 },
+  };
+  const cur = Object.assign({}, VIEWS.max);
+  let anim = null;
+  function setView(name, instant) {
+    const to = VIEWS[name]; const from = Object.assign({}, cur);
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+    if (instant || reduceMotion) { Object.assign(cur, to); anim = null; return; }
+    anim = { from, to, t0: performance.now(), dur: 900 };
+  }
+  window.setView = setView;
+  window.setLabels = on => { showLabels = on; };
+
+  function applyCamera() {
+    const az = THREE.MathUtils.degToRad(cur.az), el = THREE.MathUtils.degToRad(cur.el);
+    const tgt = new THREE.Vector3(cur.tx, cur.ty, cur.tz);
+    camera.position.set(tgt.x + cur.dist * Math.cos(el) * Math.sin(az), tgt.y + cur.dist * Math.sin(el), tgt.z + cur.dist * Math.cos(el) * Math.cos(az));
+    camera.up.set(0, 1, 0);
+    if (cur.el > 85) camera.up.set(0, 0, -1);
+    camera.lookAt(tgt);
+    asm.rotation.x = Math.PI * cur.flip;
+    asm.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(asm);
+    floor.position.y = bb.min.y - 0.05;
+  }
+
+  // Ziehen / Zoomen
+  const pointers = new Map(); let pinch0 = 0, dist0 = 0;
+  stage.addEventListener('pointerdown', e => { stage.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); anim = null;
+    if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = cur.dist; } });
+  stage.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pointers.size === 1) {
+      cur.az -= (e.clientX - prev[0]) * 0.4;
+      cur.el = Math.max(-80, Math.min(89, cur.el + (e.clientY - prev[1]) * 0.3));
+    } else if (pointers.size === 2 && pinch0) {
+      const [a, b] = [...pointers.values()];
+      cur.dist = Math.max(45, Math.min(320, dist0 * pinch0 / Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1]))));
+    }
+  });
+  const up = e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch0 = 0; };
+  stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+  stage.addEventListener('wheel', e => { e.preventDefault(); cur.dist = Math.max(45, Math.min(320, cur.dist * (1 + e.deltaY * 0.001))); }, { passive: false });
+
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+  const tl = document.getElementById('t-labels');
+  tl.addEventListener('click', () => { showLabels = !showLabels; tl.setAttribute('aria-pressed', String(showLabels)); tl.textContent = showLabels ? 'Beschriftung aus' : 'Beschriftung an'; });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const tmpN = new THREE.Vector3(), toCam = new THREE.Vector3();
+  function updateLabels() {
+    const w = stage.clientWidth, h = stage.clientHeight, sc = Math.max(0.55, Math.min(1, w / 900));
+    const leader = getComputedStyle(document.documentElement).getPropertyValue('--leader').trim();
+    labels.forEach(l => {
+      l.v.set(l.a[0], l.a[1], l.a[2]); asm.localToWorld(l.v);
+      let vis = showLabels;
+      if (vis && l.n) { tmpN.copy(l.n).transformDirection(asm.matrixWorld); toCam.copy(camera.position).sub(l.v).normalize(); vis = tmpN.dot(toCam) > 0.15; }
+      const p = l.v.clone().project(camera);
+      if (p.z > 1) vis = false;
+      l.el.hidden = !vis; l.line.style.display = l.dot.style.display = vis ? '' : 'none';
+      if (!vis) return;
+      const sx = (p.x + 1) / 2 * w, sy = (1 - p.y) / 2 * h;
+      let lx = sx + l.dx * sc, ly = sy + l.dy * sc;
+      const bw = l.el.offsetWidth, bh = l.el.offsetHeight, left = l.dx < 0;
+      lx = left ? Math.max(bw + 6, Math.min(w - 6, lx)) : Math.max(6, Math.min(w - bw - 6, lx));
+      ly = Math.max(bh / 2 + 6, Math.min(h - bh / 2 - 6, ly));
+      l.el.classList.toggle('left', left);
+      l.el.style.left = lx + 'px'; l.el.style.top = ly + 'px';
+      [['x1', sx], ['y1', sy], ['x2', lx], ['y2', ly]].forEach(([k, v]) => l.line.setAttribute(k, v));
+      l.line.setAttribute('stroke', leader); l.line.setAttribute('stroke-width', '1.2');
+      l.dot.setAttribute('cx', sx); l.dot.setAttribute('cy', sy); l.dot.setAttribute('fill', leader);
+    });
+  }
+
+  function frame(now) {
+    if (anim) {
+      const t = Math.min(1, (now - anim.t0) / anim.dur), e = ease(t);
+      for (const k of Object.keys(anim.to)) cur[k] = anim.from[k] + (anim.to[k] - anim.from[k]) * e;
+      if (t >= 1) anim = null;
+    }
+    applyCamera();
+    renderer.render(scene, camera);
+    updateLabels();
+    requestAnimationFrame(frame);
+  }
+  setView('max', true);
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

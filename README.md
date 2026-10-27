@@ -106,6 +106,8 @@ Das Modul ist ein Sandwich aus zwei Platinen, ohne Lochrasterplatine (Aufbau von
 
 Größe ca. 23,5 × 19,5 × 9 mm ohne Kabel.
 
+Drehbares 3D-Modell zum Öffnen im Browser: [`docs/3d-modell/Aufbau3D_Mini-S3.html`](docs/3d-modell/Aufbau3D_Mini-S3.html) (Datei herunterladen und doppelklicken, braucht Internet für three.js).
+
 ![3D-Ansicht MAX-Seite](docs/hardware-bilder/aufbau3d_max_S3.png)
 
 ![3D-Ansicht ESP-Seite](docs/hardware-bilder/aufbau3d_esp_S3.png)
