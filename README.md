@@ -93,7 +93,30 @@ Eine WLAN-Brücke oder ein Jumper ist seit v0.05 nicht mehr nötig, GPIO9 ist fr
 Bauplan mit Bauteilliste, Pinbelegung und Grafiken: [`docs/Hardware-Bauplan_Mini-S3.docx`](docs/Hardware-Bauplan_Mini-S3.docx).
 Die Pins kommen aus `firmware/ESP32_Sound_Mini_S3/pins.h` (ein KiCad-Schaltplan fehlt noch). Eine SD-Karte gibt es nicht.
 
-Der MAX98357A wird direkt auf die Versorgungsreihe des S3-Zero gelötet (VIN-5V, GND-GND, SD-Pin nicht gelötet, 3V3 bleibt frei).
+### Aufbau
+
+Das Modul ist ein Sandwich aus zwei Platinen, ohne Lochrasterplatine (Aufbau von Martin, läuft):
+
+- Der **MAX98357A** sitzt Rücken an Rücken auf der Rückseite des S3-Zero. Seine 7-polige Stiftleiste geht durch beide Platinen und trifft 5V, GND, 3V3, IO1 bis IO4 (VIN-5V, GND-GND, GAIN-IO1, DIN-IO2, BCLK-IO3, LRC-IO4). Den **SD-Stift weglassen**, 3V3 bleibt frei.
+- Die Bauteilseite des ESP mit USB-C und BOOT-Taste bleibt frei zugänglich.
+- **Port A** (Empfänger): 4 Kabel, auf der Bauteilseite an 5V, GND, IO5 und IO6 gelötet, mit 4-poligem JST-Stecker. Farben: schwarz GND, rot +5V, gelb IO5 (CRSF RX ← Empfänger-TX), weiß IO6 (CRSF TX → Empfänger-RX).
+- **Port B**: 2 Stifte an IO7 (RX) und IO8 (TX), zeigen zur MAX-Seite.
+- **Port C** (IO43/IO44) ist optional: bei Bedarf Kabel direkt an die Pins löten.
+- **Lautsprecher** am 2-poligen JST-PH-Stecker des MAX (+ und −), nie an GND.
+
+Größe ca. 23,5 × 19,5 × 9 mm ohne Kabel.
+
+![3D-Ansicht MAX-Seite](docs/hardware-bilder/aufbau3d_max_S3.png)
+
+![3D-Ansicht ESP-Seite](docs/hardware-bilder/aufbau3d_esp_S3.png)
+
+| MAX-Seite | ESP-Seite |
+|---|---|
+| ![Foto MAX-Seite](docs/hardware-bilder/foto_max_seite_S3.jpg) | ![Foto ESP-Seite](docs/hardware-bilder/foto_esp_seite_S3.jpg) |
+
+Auf den Fotos haben die Port-A-Kabel noch andere Farben (grün IO5, orange IO6).
+
+### Pinbelegung
 
 ![MAX direkt am ESP](docs/hardware-bilder/max_direkt_S3.png)
 
