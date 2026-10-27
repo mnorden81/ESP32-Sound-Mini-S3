@@ -101,7 +101,7 @@ Das Modul ist ein Sandwich aus zwei Platinen, ohne Lochrasterplatine (Aufbau von
 - Die Bauteilseite des ESP mit USB-C und BOOT-Taste bleibt frei zugänglich.
 - **Port A** (Empfänger): 4 Kabel, auf der Bauteilseite an 5V, GND, IO5 und IO6 gelötet, mit 4-poligem JST-Stecker. Farben: schwarz GND, rot +5V, gelb IO5 (CRSF RX ← Empfänger-TX), weiß IO6 (CRSF TX → Empfänger-RX).
 - **Port B**: 2 Stifte an IO7 (RX) und IO8 (TX), zeigen zur MAX-Seite.
-- **Port C** (IO43/IO44) ist optional: bei Bedarf Kabel direkt an die Pins löten.
+- **Port C** (IO43/IO44) ist optional: bei Bedarf zwei Kabel auf der Bauteilseite direkt an die Pins löten, z. B. grün IO43 (TX) und blau IO44 (RX). In den 3D-Ansichten ist Port C halb durchsichtig gezeichnet.
 - **Lautsprecher** am 2-poligen JST-PH-Stecker des MAX (+ und −), nie an GND.
 
 Größe ca. 23,5 × 19,5 × 9 mm ohne Kabel.
