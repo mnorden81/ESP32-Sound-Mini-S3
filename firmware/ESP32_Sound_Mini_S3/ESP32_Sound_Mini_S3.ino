@@ -82,7 +82,10 @@
 #include "sound_store.h"
 #include "mem_info.h"
 
-uint16_t Version = 6;  // Firmware-Version fuer Web-/Lua-Anzeige: major*100+minor (6 -> "0.06")
+uint16_t Version = 7;  // Firmware-Version fuer Web-/Lua-Anzeige: major*100+minor (7 -> "0.07")
+// v0.07: Web-Tab Debug: WAV-Liste zeigt, ob die Datei im Flash liegt (mit
+//        Groesse) statt "gerade geoeffnet"; RAM-Zeile eindeutig (belegt/
+//        frei/min frei); neue Karte "Dateien im Flash" mit allen Dateien.
 // v0.06: Speicherbelegung (Firmware, Sounds, RAM, PSRAM) im Web-Tab Debug
 //        und im Lua-Ordner "Speicher" (Felder 53-57).
 // v0.05: WLAN-Taste statt WLAN-Bruecke: BOOT-Taste (GPIO0) nach dem

@@ -541,6 +541,11 @@ hr{border:none;border-top:1px solid var(--border);margin:10px 0}
     <div class="card-title">WAV Dateien</div>
     <div id="dbg-wav"></div>
   </div>
+  <!-- v0.07: alle Dateien im Flash mit Groesse, aus /api/debug "fsfiles" -->
+  <div class="card">
+    <div class="card-title">Dateien im Flash</div>
+    <div id="dbg-fsfiles"></div>
+  </div>
   <div class="card">
     <div class="card-title">GPS</div>
     <div id="dbg-gps"></div>
@@ -811,24 +816,36 @@ function renderDbg(){
         '<div class="mbar"><div style="width:'+p+'%;background:'+c+'"></div></div>';
     };
     var h=bar('Firmware',m.app_used,m.app_size,mb(m.app_used)+' von '+mb(m.app_size));
-    h+=m.fs_size?bar('Sounds (Flash)',m.fs_used,m.fs_size,mb(m.fs_used)+' von '+mb(m.fs_size)+', frei '+mb(m.fs_size-m.fs_used))
+    h+=m.fs_size?bar('Sounds (Flash)',m.fs_used,m.fs_size,mb(m.fs_used)+' von '+mb(m.fs_size)+', frei '+mb(m.fs_size>m.fs_used?m.fs_size-m.fs_used:0))
                 :'<div class="row"><span class="lbl">Sounds (Flash)</span><span class="badge bg-r">nicht verf&uuml;gbar</span></div>';
-    h+=bar('RAM',m.heap_size-m.heap_free,m.heap_size,'frei '+kb(m.heap_free)+' von '+kb(m.heap_size)+', min '+kb(m.heap_min));
-    h+=m.psram_size?bar('PSRAM',m.psram_size-m.psram_free,m.psram_size,'frei '+mb(m.psram_free)+' von '+mb(m.psram_size))
+    // v0.07: Text und Prozent zeigen beide den BELEGTEN Anteil, frei extra
+    h+=bar('RAM',m.heap_size-m.heap_free,m.heap_size,'belegt '+kb(m.heap_size-m.heap_free)+' von '+kb(m.heap_size)+', frei '+kb(m.heap_free)+', min frei '+kb(m.heap_min));
+    h+=m.psram_size?bar('PSRAM',m.psram_size-m.psram_free,m.psram_size,'belegt '+mb(m.psram_size-m.psram_free)+' von '+mb(m.psram_size)+', frei '+mb(m.psram_free))
                    :'<div class="row"><span class="lbl">PSRAM</span><span class="badge bg-s">nicht erkannt</span></div>';
-    h+='<div style="font-size:11px;color:var(--sub)">Firmware: Platz in der App-Partition (OTA). Sounds: Flash-Dateisystem mit Sounds und Backups. RAM: in Prozent belegt, min = kleinster freier Wert seit dem Start.</div>';
+    h+='<div style="font-size:11px;color:var(--sub)">Firmware: Platz in der App-Partition (OTA). Sounds: Flash-Dateisystem mit Sounds und Backups. Prozent = belegter Anteil. RAM: min frei = kleinster freier Wert seit dem Start.</div>';
     me.innerHTML=h;
   }
+  // v0.07: Datei im Flash vorhanden (mit Groesse) statt "gerade geoeffnet"
   var wv=document.getElementById('dbg-wav');
   if(wv&&dbg.wav){
-    var w=dbg.wav,h='';
-    ['loop','shut','start'].forEach(function(n){
-      h+='<div class="row"><span class="lbl">'+n+'.wav</span><span class="badge '+(w[n]?'bg-g':'bg-r')+'">'+(w[n]?'OK':'fehlt')+'</span></div>';
-    });
-    if(w.s)w.s.forEach(function(v,i){
-      h+='<div class="row"><span class="lbl">sound'+(i+1)+'.wav</span><span class="badge '+(v?'bg-g':'bg-r')+'">'+(v?'OK':'fehlt')+'</span></div>';
+    var h='';
+    dbg.wav.forEach(function(f){
+      h+='<div class="row"><span class="lbl">'+f.n+'</span><span class="badge '+(f.e?'bg-g':'bg-r')+'">'+(f.e?Math.round(f.s/1024)+' KB':'fehlt')+'</span></div>';
     });
     wv.innerHTML=h;
+  }
+  // v0.07: alle Dateien im Flash-Speicher (Sounds, Backups, evtl. Reste)
+  var ff=document.getElementById('dbg-fsfiles');
+  if(ff&&dbg.fsfiles){
+    var h='',sum=0;
+    dbg.fsfiles.forEach(function(f){
+      sum+=f.s;
+      h+='<div class="row"><span class="lbl" style="font-family:var(--mono);font-size:12px">'+f.n+'</span><span style="font-family:var(--mono);font-size:12px">'+Math.round(f.s/1024)+' KB</span></div>';
+    });
+    if(!dbg.fsfiles.length) h='<div style="font-size:12px;color:var(--sub)">keine Dateien</div>';
+    else h+='<div class="row"><span class="lbl">Summe</span><span style="font-family:var(--mono);font-size:12px">'+(sum/1048576).toFixed(2)+' MB</span></div>';
+    h+='<div style="font-size:11px;color:var(--sub)">Das Dateisystem belegt etwas mehr als die Summe (Verwaltung, 4-KB-Bl&ouml;cke).</div>';
+    ff.innerHTML=h;
   }
   var gp=document.getElementById('dbg-gps');
   if(gp&&dbg.gps){
@@ -2193,6 +2210,30 @@ void WebServerManager::handleApiWifiEnable() {
 
 // ── GET /api/debug ────────────────────────────────────────────────────────
 // Live-Daten: BUS-Kanäle, WAV-Status, S.Port.
+// v0.07: haengt alle Dateien unter "dir" als {"n":Pfad,"s":Bytes} an "j" an
+// (eine Unterordner-Ebene, z. B. /backup, max. 32 Eintraege). Nur innerhalb
+// eines sdMutexTake()-Fensters aufrufen.
+static void appendFsFiles(String& j, const String& dir, uint8_t depth, uint8_t& count) {
+  File d = soundFS().open(dir);
+  if (!d || !d.isDirectory()) return;
+  File f = d.openNextFile();
+  while (f && count < 32) {
+    String path = String(f.path());
+    if (f.isDirectory()) {
+      if (depth == 0) { f.close(); appendFsFiles(j, path, 1, count); }
+      else f.close();
+    } else {
+      if (count) j += ",";
+      j += "{\"n\":\"" + jsonEscape(path.c_str()) + "\",\"s\":" + String((uint32_t)f.size()) + "}";
+      count++;
+      f.close();
+    }
+    f = d.openNextFile();
+  }
+  if (f) f.close();
+  d.close();
+}
+
 void WebServerManager::handleApiDebug() {
   String j = "{";
 
@@ -2201,19 +2242,30 @@ void WebServerManager::handleApiDebug() {
   for (int i = 0; i < 16; i++) { if (i) j += ","; j += String(channel_output[i]); }
   j += "],";
 
-  // WAV-Dateistatus
-  j += "\"wav\":{";
-  j += "\"loop\":"  + String(Sound_loop.FileOK)  + ",";
-  j += "\"shut\":"  + String(Sound_shut.FileOK)  + ",";
-  j += "\"start\":" + String(Sound_start.FileOK) + ",";
-  // Ueber Sounds[] (siehe Extern-Deklaration oben) deckt das alle
-  // RCSOUND_NUM_SLOTS-1 Sounds ab.
-  j += "\"s\":[";
-  for (int i = 1; i < RCSOUND_NUM_SLOTS; i++) {
-    if (i > 1) j += ",";
-    j += String(Sounds[i] ? Sounds[i]->FileOK : 0);
+  // WAV-Dateistatus - v0.07: ob die Datei im Flash liegt (und wie gross),
+  // nicht mehr FileOK. FileOK ist nur true, solange der Sound GEOEFFNET ist,
+  // und Sound 1-4 werden erst beim Ausloesen geoeffnet - die Liste zeigte
+  // deshalb "fehlt", obwohl die Datei vorhanden war.
+  // Dazu "fsfiles": ALLE Dateien im Flash (Sounds, Backups, evtl. Reste),
+  // damit sichtbar ist, was den Platz belegt.
+  static const char* const fixedNames[3] = { "loop.wav", "shut.wav", "start.wav" };
+  bool haveFs = sdMutexTake(1000);
+  j += "\"wav\":[";
+  for (int i = 0; i < 3 + RCSOUND_NUM_SOUNDS; i++) {
+    String name = (i < 3) ? String(fixedNames[i]) : ("sound" + String(i - 2) + ".wav");
+    uint32_t size = 0;
+    bool exists = haveFs && sdFileInfo("/" + name, size);
+    if (i) j += ",";
+    j += "{\"n\":\"" + name + "\",\"e\":" + String(exists ? 1 : 0) + ",\"s\":" + String(size) + "}";
   }
-  j += "]},";
+  j += "],";
+  j += "\"fsfiles\":[";
+  if (haveFs) {
+    uint8_t count = 0;
+    appendFsFiles(j, "/", 0, count);
+  }
+  j += "],";
+  if (haveFs) sdMutexGive();
 
   // v0.06: Speicherbelegung (Bytes), Anzeige im Tab Debug
   MemInfo m = memInfoRead();
