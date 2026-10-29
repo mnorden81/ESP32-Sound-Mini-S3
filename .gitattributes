@@ -1,3 +1,5 @@
 *.docx binary
 *.png binary
 *.jpg binary
+*.stl binary
+*.step binary

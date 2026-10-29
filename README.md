@@ -118,6 +118,12 @@ Drehbares 3D-Modell zum Öffnen im Browser: [`docs/3d-modell/Aufbau3D_Mini-S3.ht
 
 Auf den Fotos haben die Port-A-Kabel noch andere Farben (grün IO5, orange IO6).
 
+### Gehäuse
+
+3D-druckbares Gehäuse (30 × 27 × 18 mm, ESP-Seite oben, BOOT-Taste als federnde Zunge im Deckel): STL, STEP und Quelle in [`hardware/gehaeuse/`](hardware/gehaeuse/README.md).
+
+![Gehäuse](hardware/gehaeuse/gehaeuse_zu.png)
+
 ### Pinbelegung
 
 ![MAX direkt am ESP](docs/hardware-bilder/max_direkt_S3.png)
@@ -147,7 +153,7 @@ Auf den Fotos haben die Port-A-Kabel noch andere Farben (grün IO5, orange IO6).
 ## Ordner
 
 - `firmware/` PlatformIO-Projekt
-- `hardware/` Schaltplan, PCB
+- `hardware/gehaeuse/` 3D-Druck-Gehäuse (STL, STEP, Quelle)
 - `docs/` Projektbeschreibung, Projektplan, später Pinout und Changelog
 - `backups/` funktionierende Stände (nur lokal, nicht im Repo)
 
