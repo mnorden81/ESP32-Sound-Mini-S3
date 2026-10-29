@@ -11,7 +11,7 @@ Abgeleitet von [ESP32-RC-Sound V7](https://github.com/mnorden81/mnorden81-ESP32-
 - **Web-UI:** Sound-Upload und OTA-Update per WLAN, WLAN ab Werk immer an, sonst per BOOT-Taste oder Lua einschaltbar
 - **Verstärker:** MAX98357A (I2S)
 
-**Aktuelle Version:** v0.07 (noch nicht auf Hardware getestet; v0.06 getestet am 28.10.2026, Sandwich-Aufbau)
+**Aktuelle Version:** v0.08 (noch nicht auf Hardware getestet; v0.07 getestet am 29.10.2026)
 
 Die Firmware ist eine Arduino-Skizze: `firmware/ESP32_Sound_Mini_S3/ESP32_Sound_Mini_S3.ino`. Gemeinsamer Code mit Multiswitch und Soundmodul V7 liegt in `firmware/ESP32_Sound_Mini_S3/src/RC_Common/` (identische Kopie, siehe README dort). Gebaut wird mit dem Arduino-ESP32-Core 3.0.7 (Arduino IDE oder PlatformIO).
 
@@ -31,7 +31,7 @@ Seit v0.06 zeigt das Modul, wie voll Flash und RAM sind:
 | Anzeige | Bedeutung |
 |---|---|
 | Firmware | Größe der Firmware im Verhältnis zur App-Partition (1,25 MB). Die Firmware muss in eine Partition passen, sonst ist kein OTA-Update möglich. |
-| Sounds | Belegter Platz im Flash-Dateisystem (Sounds und Einstellungs-Backups), ca. 1,3 MB |
+| Sounds | Belegter Platz im Flash-Dateisystem (Sounds und Einstellungs-Backups), ca. 1,3 MB. Seit v0.08 aus den Dateien berechnet (auf 4-KB-Blöcke aufgerundet plus Verwaltung). |
 | RAM | Belegter und freier interner Arbeitsspeicher, „min frei“ = kleinster freier Wert seit dem Start |
 | PSRAM | Freier externer RAM (2 MB beim S3FH4R2) |
 
@@ -143,6 +143,7 @@ Auf den Fotos haben die Port-A-Kabel noch andere Farben (grün IO5, orange IO6).
 
 | Version | Änderung |
 |---|---|
+| 0.08 | Sound-Speicher-Belegung wird aus den Dateien berechnet (4-KB-Blöcke plus Verwaltung) statt mit `LittleFS.usedBytes()`. Diese Bibliotheksfunktion ist nur eine obere Schätzung und zeigte im Web dauerhaft „100 %, frei 0,00 MB“, obwohl noch Platz frei war. Web und Lua zeigen jetzt denselben Wert. Der alte Bibliothekswert steht nur noch im seriellen Monitor. |
 | 0.07 | Web-Tab „Debug“: „WAV Dateien“ zeigt jetzt, ob die Datei im Flash liegt (mit Größe). Vorher stand bei Sound 1–4 „fehlt“, solange der Sound nicht gerade gespielt wurde. RAM-Zeile eindeutig (belegt, frei, min frei). Neue Karte „Dateien im Flash“ mit allen Dateien und Summe. |
 | 0.06 | Speicherbelegung: Firmware, Sounds (Flash), RAM und PSRAM im Web-Tab „Debug“ (Karte „Speicherbelegung“) und im Lua-Ordner „Speicher“ (Felder 53–57, nur Anzeige). Auf Hardware getestet (28.10.2026). |
 | 0.05 | WLAN-Taste statt WLAN-Brücke: Die BOOT-Taste (GPIO0) nach dem Einschalten innerhalb von 3 s kurz drücken schaltet das WLAN ein (nur wenn „WLAN dauerhaft an“ aus ist, LED blinkt dabei blau). GPIO9 und der Jumper entfallen. |
