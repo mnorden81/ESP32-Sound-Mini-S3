@@ -10,7 +10,8 @@
  *   - Firmware: Groesse der laufenden Firmware / Groesse der App-Partition
  *     (default.csv: 2 x 1,25 MB fuer OTA)
  *   - Sounds:   belegter / gesamter Platz im Flash-Dateisystem (LittleFS,
- *     Sounds + Einstellungs-Backups)
+ *     Sounds + Einstellungs-Backups), seit v0.08 aus den Dateien berechnet
+ *     (siehe soundStoreUsedBytes())
  *   - RAM:      freier interner Heap, kleinster Wert seit dem Start
  *   - PSRAM:    freier PSRAM (S3FH4R2: 2 MB), 0 wenn keiner erkannt
  */

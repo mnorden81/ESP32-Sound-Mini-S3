@@ -844,7 +844,7 @@ function renderDbg(){
     });
     if(!dbg.fsfiles.length) h='<div style="font-size:12px;color:var(--sub)">keine Dateien</div>';
     else h+='<div class="row"><span class="lbl">Summe</span><span style="font-family:var(--mono);font-size:12px">'+(sum/1048576).toFixed(2)+' MB</span></div>';
-    h+='<div style="font-size:11px;color:var(--sub)">Das Dateisystem belegt etwas mehr als die Summe (Verwaltung, 4-KB-Bl&ouml;cke).</div>';
+    h+='<div style="font-size:11px;color:var(--sub)">Sounds (Flash) oben = diese Dateien auf 4-KB-Bl&ouml;cke aufgerundet plus Verwaltung, deshalb etwas mehr als die Summe.</div>';
     ff.innerHTML=h;
   }
   var gp=document.getElementById('dbg-gps');
@@ -1904,10 +1904,11 @@ static void logSdUploadFail(const char* name, const char* err,
   total = soundStoreTotalBytes();
   used  = soundStoreUsedBytes();
   Serial.printf("[Upload] FEHLER %s bei /%s | geschrieben=%u B | "
-                "Speicher: %llu frei von %llu B | freigegebene Handles=0x%08X | Heap=%u\n",
+                "Speicher: %llu frei von %llu B (Bibliothek belegt %llu B) | freigegebene Handles=0x%08X | Heap=%u\n",
                 err, name, (unsigned)bytesSoFar,
                 (unsigned long long)(total > used ? total - used : 0),
-                (unsigned long long)total, motorMask,
+                (unsigned long long)total,
+                (unsigned long long)soundStoreLibUsedBytes(), motorMask,
                 (unsigned)ESP.getFreeHeap());
 }
 

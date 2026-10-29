@@ -23,6 +23,7 @@ fs::FS&     soundFS();            // Speicher fuer die Sound-Dateien
 bool        soundStoreReady();    // false = Flash-Dateisystem nicht verfuegbar
 const char* soundStoreName();     // "Flash"
 uint64_t    soundStoreTotalBytes();
-uint64_t    soundStoreUsedBytes();
+uint64_t    soundStoreUsedBytes();     // v0.08: aus den Dateien berechnet (4-KB-Bloecke)
+uint64_t    soundStoreLibUsedBytes();  // LittleFS.usedBytes(), nur fuers Serial-Log
 
 #endif

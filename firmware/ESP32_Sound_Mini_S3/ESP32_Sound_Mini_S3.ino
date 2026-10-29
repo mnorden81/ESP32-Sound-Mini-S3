@@ -82,7 +82,10 @@
 #include "sound_store.h"
 #include "mem_info.h"
 
-uint16_t Version = 7;  // Firmware-Version fuer Web-/Lua-Anzeige: major*100+minor (7 -> "0.07")
+uint16_t Version = 8;  // Firmware-Version fuer Web-/Lua-Anzeige: major*100+minor (8 -> "0.08")
+// v0.08: Belegung des Sound-Speichers selbst aus den Dateien berechnet
+//        (4-KB-Bloecke), statt LittleFS.usedBytes() - das zeigte im Web
+//        dauerhaft 100 %. Web und Lua zeigen denselben Wert.
 // v0.07: Web-Tab Debug: WAV-Liste zeigt, ob die Datei im Flash liegt (mit
 //        Groesse) statt "gerade geoeffnet"; RAM-Zeile eindeutig (belegt/
 //        frei/min frei); neue Karte "Dateien im Flash" mit allen Dateien.
