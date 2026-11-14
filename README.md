@@ -50,27 +50,77 @@ Sounds ins Flash bringen:
 
 Konfigurations-Backups liegen ab v0.04 im Flash (Weboberfläche, Karte „Konfiguration sichern“: im Modul sichern, wiederherstellen, löschen; automatisch vor jedem Import und Firmware-Update). `pio run -t uploadfs` überschreibt den ganzen Flash-Speicher und damit auch diese Backups.
 
-## Bauen
+## Firmware flashen
 
-### Arduino IDE
+Es gibt drei Wege. Ein neues Modul wird einmal per USB geflasht (Weg 1 oder Weg 2), danach geht jedes Update bequem per WLAN (Weg 3).
 
-1. Boardverwalter: „esp32“ von Espressif, Version **3.0.7**
-2. Bibliothek: „TinyGPSPlus“ (Mikal Hart)
-3. `firmware/ESP32_Sound_Mini_S3/ESP32_Sound_Mini_S3.ino` öffnen
-4. Werkzeuge:
-   - Board: **ESP32S3 Dev Module**
-   - USB CDC On Boot: **Enabled**
-   - USB Mode: **Hardware CDC and JTAG**
-   - Flash Size: **4MB (32Mb)**
-   - Partition Scheme: **Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS)**
-   - PSRAM: **QSPI PSRAM**
-5. Hochladen
+| Weg | Braucht | Einstellungen im Modul |
+|---|---|---|
+| 1. Fertige Datei aus GitHub + Web-Flasher | nur Chrome oder Edge | werden **gelöscht** |
+| 2. Arduino IDE | Arduino IDE 2.x | bleiben erhalten |
+| 3. Update per WLAN | Handy oder PC mit WLAN | bleiben erhalten |
 
-Für den **ESP32-C3 Pro Mini** dieselbe Skizze öffnen, nur andere Werkzeuge-Einstellungen: Board **ESP32C3 Dev Module**, USB CDC On Boot **Enabled**, Flash Size **4MB (32Mb)**, Partition Scheme wie oben. Die Pins wählt `pins.h` automatisch nach dem Board.
+Derselbe Sketch läuft auf dem ESP32-S3-Zero und dem ESP32-C3 Pro Mini, `pins.h` wählt die Pins nach dem Board. Unterschiede stehen jeweils dabei.
 
-Fertige Images baut die CI (GitHub Actions, Artefakte `sound-mini-s3-firmware` und `sound-mini-c3-firmware`): `*.ino.bin` für das OTA-Update über die Weboberfläche, `*.merged.bin` als Komplett-Image ab Adresse 0x0 (z. B. mit https://espressif.github.io/esptool-js/).
+### Weg 1: Fertige Firmware aus GitHub (ohne Arduino IDE)
 
-### PlatformIO (alternativ)
+GitHub baut die Firmware bei jeder Änderung automatisch (Workflow „CI“).
+
+1. Auf GitHub angemeldet sein (sonst gibt es keinen Download-Knopf).
+2. In diesem Repo oben auf **Actions** klicken, links den Workflow **CI** wählen.
+3. Den obersten Lauf mit grünem Haken öffnen (Branch `main`).
+4. Ganz unten unter **Artifacts** **sound-mini-s3-firmware** (ESP32-S3-Zero) bzw. **sound-mini-c3-firmware** (ESP32-C3 Pro Mini) herunterladen und die ZIP-Datei entpacken. Darin liegen u. a. `ESP32_Sound_Mini_S3.ino.merged.bin` (Komplett-Image für USB) und `ESP32_Sound_Mini_S3.ino.bin` (nur für Weg 3).
+   Steht dort nichts (Artefakte werden nach 90 Tagen gelöscht): rechts oben **Run workflow** → **Run workflow** klicken, nach ca. 3 Minuten ist ein neuer Lauf fertig.
+5. Modul mit einem USB-C-**Datenkabel** an den PC stecken (kein reines Ladekabel). Ein Treiber ist unter Windows 10/11 nicht nötig. Die BOOT-Taste dabei **nicht** drücken.
+6. In **Chrome** oder **Edge** die Seite https://espressif.github.io/esptool-js/ öffnen (Espressif-Web-Flasher, Firefox geht nicht).
+7. **Connect** klicken und den COM-Port des Moduls wählen. Klappt das nicht: Baudrate oben auf `115200` stellen und das Modul mit der BOOT-Taste in den Flash-Modus bringen (siehe Weg 2, „Wenn das Hochladen nicht klappt“).
+8. Unter **Flash Address** `0x0` eintragen, mit **Datei auswählen** die `.merged.bin` wählen, dann **Program** klicken.
+9. Wenn unten „Leaving…“ steht, das USB-Kabel kurz abziehen und wieder einstecken. Fertig.
+
+> **Achtung:** Das Komplett-Image überschreibt den ganzen Flash (4 MB). Alle Einstellungen, Backups und **alle Sounds im Flash** sind danach weg. Vorher in der Weboberfläche die Einstellungen als Datei sichern (Karte **Konfiguration sichern / wiederherstellen** → „Export“; die WAV-Dateien am PC aufheben und danach wieder hochladen) und hinterher dort wieder importieren. Wer die Einstellungen behalten will, nimmt Weg 2 oder 3.
+
+### Weg 2: Arduino IDE
+
+**Einmalig einrichten**
+
+1. Arduino IDE 2.x installieren (https://www.arduino.cc/en/software).
+2. **Datei → Einstellungen → Zusätzliche Boardverwalter-URLs**: `https://espressif.github.io/arduino-esp32/package_esp32_index.json` eintragen.
+3. **Werkzeuge → Board → Boardverwalter**: „esp32“ suchen, **esp32 von Espressif Systems** in Version **3.0.7** installieren.
+4. **Werkzeuge → Bibliotheken verwalten**: **TinyGPSPlus 1.0.3** suchen und in genau dieser Version installieren.
+   Alles andere (z. B. `src/RC_Common/`) liegt schon im Sketch-Ordner.
+
+**Flashen**
+
+1. Repo herunterladen: oben auf GitHub **Code → Download ZIP**, entpacken (oder den vorhandenen Ordner nehmen).
+2. In der Arduino IDE **Datei → Öffnen** und `firmware/ESP32_Sound_Mini_S3/ESP32_Sound_Mini_S3.ino` wählen.
+3. Unter **Werkzeuge** einstellen:
+
+   | Einstellung | Wert |
+   |---|---|
+   | Board | **ESP32S3 Dev Module** (S3-Zero) bzw. **ESP32C3 Dev Module** (C3 Pro Mini) |
+   | USB CDC On Boot | **Enabled** |
+   | USB Mode (nur S3) | Hardware CDC and JTAG |
+   | Flash Size | **4MB (32Mb)** |
+   | Partition Scheme | **Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS)** |
+   | PSRAM (nur S3) | **QSPI PSRAM** |
+   | Erase All Flash Before Sketch Upload | **Disabled** (sonst sind die Einstellungen weg) |
+
+4. Modul mit einem USB-C-**Datenkabel** an den PC stecken (kein reines Ladekabel). Ein Treiber ist unter Windows 10/11 nicht nötig. Die BOOT-Taste dabei **nicht** drücken. Dann unter **Werkzeuge → Port** den neuen COM-Port wählen.
+5. Auf den Pfeil **Hochladen** klicken. Am Ende steht „Hard resetting via RTS pin…“.
+6. Das Modul startet von selbst neu. Wenn nicht: USB-Kabel kurz abziehen und wieder einstecken. Sounds und Einstellungen im Flash bleiben erhalten.
+
+**Wenn das Hochladen nicht klappt** („Failed to connect“ oder „No serial data received“): USB abziehen, die Taste **BOOT** gedrückt halten, USB wieder einstecken, BOOT loslassen. Das Modul ist jetzt im Flash-Modus. Unter **Werkzeuge → Port** ggf. den neuen COM-Port wählen und noch einmal **Hochladen**. Danach das USB-Kabel einmal abziehen und wieder einstecken.
+
+### Weg 3: Update per WLAN (OTA)
+
+1. Die Datei `ESP32_Sound_Mini_S3.ino.bin` besorgen: aus GitHub (Weg 1, Schritte 1–4) oder in der Arduino IDE mit **Sketch → Kompilierte Binärdatei exportieren** (liegt dann im Sketch-Ordner unter `build/`). Nicht die `.merged.bin` nehmen.
+2. WLAN des Moduls einschalten (ab Werk immer an, sonst siehe [WLAN einschalten](#wlan-einschalten)). Name **Sound-Mini**, Passwort `123456789`.
+3. Mit Handy oder PC in dieses WLAN gehen und im Browser http://192.168.1.1 öffnen.
+4. Karte **Firmware-Update (OTA)**: die `.bin`-Datei auswählen und hochladen. Das Modul startet danach neu, die Einstellungen bleiben erhalten.
+
+Schlägt das Update fehl, läuft die alte Firmware einfach weiter. Das Modul beim Update am besten über den Empfänger/BEC versorgen, nicht nur über einen schwachen USB-Anschluss.
+
+### PlatformIO (für Entwickler)
 
 ```bash
 cd firmware
